@@ -4,15 +4,16 @@ import pandas as pd
 from io import BytesIO
 from fastapi.responses import StreamingResponse
 
-app = FastAPI(title="CSV Cleaner API (Starter)", version="0.0.1")
+app = FastAPI(title="CSV Cleaner API", version="0.0.1")
 
 # ---- CORS Setup ----
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://csv-cleaner-phi.vercel.app/"],
+    allow_origins=["https://csv-cleaner-phi.vercel.app/"],  # frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"]  # important for filename in downloads
 )
 
 @app.get("/")
@@ -47,7 +48,6 @@ async def clean_csv(file: UploadFile = File(...)):
     """
     df = await _read_and_clean(file)
 
-    # Return CSV
     buffer = BytesIO()
     df.to_csv(buffer, index=False)
     buffer.seek(0)
@@ -55,7 +55,10 @@ async def clean_csv(file: UploadFile = File(...)):
     return StreamingResponse(
         buffer,
         media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=cleaned_{file.filename}"}
+        headers={
+            "Content-Disposition": f'attachment; filename="cleaned_{file.filename}"',
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
     )
 
 @app.post("/download_xlsx")
@@ -65,7 +68,6 @@ async def download_xlsx(file: UploadFile = File(...)):
     """
     df = await _read_and_clean(file)
 
-    # Return Excel
     buffer = BytesIO()
     df.to_excel(buffer, index=False, engine='openpyxl')
     buffer.seek(0)
@@ -73,7 +75,10 @@ async def download_xlsx(file: UploadFile = File(...)):
     return StreamingResponse(
         buffer,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename=cleaned_{file.filename.split('.')[0]}.xlsx"}
+        headers={
+            "Content-Disposition": f'attachment; filename="cleaned_{file.filename.split(".")[0]}.xlsx"',
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
     )
 
 # ---- Helper function to read and clean CSV ----
