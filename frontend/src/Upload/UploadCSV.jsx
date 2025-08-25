@@ -20,7 +20,7 @@ const UploadCSV = () => {
     formData.append("file", file);
     try {
       const res = await axios.post(
-        "http://127.0.0.1:8000/upload_csv",
+        "https://csv-cleaner-uo6o.onrender.com/upload_csv",
         formData
       );
       setInfo(res.data);
@@ -35,7 +35,7 @@ const UploadCSV = () => {
     const formData = new FormData();
     formData.append("file", file);
     try {
-      const res = await axios.post("http://127.0.0.1:8000/clean", formData, {
+      const res = await axios.post("https://csv-cleaner-uo6o.onrender.com/clean", formData, {
         responseType: "blob",
       });
       const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -57,7 +57,7 @@ const UploadCSV = () => {
     formData.append("file", file);
     try {
       const res = await axios.post(
-        "http://127.0.0.1:8000/download_xlsx",
+        "https://csv-cleaner-uo6o.onrender.com/download_xlsx",
         formData,
         { responseType: "blob" }
       );

@@ -9,7 +9,7 @@ app = FastAPI(title="CSV Cleaner API (Starter)", version="0.0.1")
 # ---- CORS Setup ----
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://csv-cleaner-phi.vercel.app/"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
