@@ -3,3 +3,4 @@ numpy==1.24.4
 fastapi==0.111.1
 uvicorn[standard]==0.23.2
 python-multipart>=0.0.7
+openpyxl==3.1.2
