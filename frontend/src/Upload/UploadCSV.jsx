@@ -2,34 +2,37 @@ import React, { useState } from "react";
 import axios from "axios";
 import { FaGithub, FaInstagram, FaLinkedin } from "react-icons/fa";
 
-console.log("Uploading file:", file);
-
 const UploadCSV = () => {
   const [file, setFile] = useState(null);
   const [info, setInfo] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handleFileChange = (e) => setFile(e.target.files[0]);
+  // Handle file selection
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+    setInfo(null); // reset info when new file selected
+  };
 
+  // Reset everything
   const handleReset = () => {
     setFile(null);
     setInfo(null);
     document.getElementById("fileInput").value = null;
   };
 
-  // Axios instance with baseURL and no credentials
+  // Axios instance with base URL
   const api = axios.create({
     baseURL: "https://csv-cleaner-cco8.onrender.com",
     withCredentials: false,
   });
 
+  // Upload CSV to preview info
   const handleUpload = async () => {
     if (!file) return alert("Please select a file");
     setLoading(true);
     try {
       const formData = new FormData();
       formData.append("file", file);
-
       const res = await api.post("/upload_csv", formData);
       setInfo(res.data);
     } catch (err) {
@@ -40,13 +43,13 @@ const UploadCSV = () => {
     }
   };
 
-  const downloadFile = async (endpoint, filename) => {
+  // Download CSV or XLSX
+  const handleDownload = async (endpoint) => {
     if (!file) return alert("Please select a file");
     setLoading(true);
     try {
       const formData = new FormData();
       formData.append("file", file);
-
       const res = await api.post(endpoint, formData, { responseType: "blob" });
 
       const blob = new Blob([res.data], {
@@ -61,7 +64,9 @@ const UploadCSV = () => {
       link.href = url;
       link.setAttribute(
         "download",
-        filename || `cleaned_${file.name}${endpoint === "/download_xlsx" ? ".xlsx" : ".csv"}`
+        endpoint === "/download_xlsx"
+          ? `cleaned_${file?.name?.split(".")[0]}.xlsx`
+          : `cleaned_${file?.name}`
       );
       document.body.appendChild(link);
       link.click();
@@ -81,7 +86,7 @@ const UploadCSV = () => {
         CSV Cleaner
       </h1>
       <p className="mb-10 text-center leading-relaxed text-gray-300 w-full max-w-md px-4 text-base sm:text-lg md:text-xl">
-        This application cleans raw CSV files and returns clean data in{" "}
+        Clean raw CSV files and get output in{" "}
         <span className="font-semibold text-blue-400">.csv</span> and{" "}
         <span className="font-semibold text-blue-400">.xlsx</span> format.
       </p>
@@ -94,35 +99,36 @@ const UploadCSV = () => {
           onChange={handleFileChange}
           className="hidden"
         />
-
         <label
           htmlFor="fileInput"
           className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition mb-4"
         >
-          {file ? `📂 ${file.name}` : "Choose CSV File"}
+          {file?.name ? `📂 ${file.name}` : "Choose CSV File"}
         </label>
 
+        {/* Download Buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
           <button
-            onClick={() => downloadFile("/clean", `cleaned_${file?.name}`)}
-            disabled={loading || !file}
+            disabled={!file || loading}
+            onClick={() => handleDownload("/clean")}
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition disabled:opacity-50"
           >
             Download Cleaned CSV
           </button>
           <button
-            onClick={() => downloadFile("/download_xlsx")}
-            disabled={loading || !file}
+            disabled={!file || loading}
+            onClick={() => handleDownload("/download_xlsx")}
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition disabled:opacity-50"
           >
             Download Excel
           </button>
         </div>
 
+        {/* Preview & Reset */}
         <div className="flex flex-col gap-3 mt-4">
           <button
+            disabled={!file || loading}
             onClick={handleUpload}
-            disabled={loading || !file}
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition disabled:opacity-50"
           >
             {loading ? "Processing..." : "Preview CSV Info"}
@@ -135,24 +141,27 @@ const UploadCSV = () => {
           </button>
         </div>
 
+        {/* Info Preview */}
         {info && (
           <div className="bg-gray-700 p-4 rounded-lg mt-5 text-left shadow-inner border border-gray-600">
             <p>
-              <strong>Filename:</strong> {info.filename}
+              <strong>Filename:</strong> {info?.filename || ""}
             </p>
             <p>
-              <strong>Rows:</strong> {info.rows}
+              <strong>Rows:</strong> {info?.rows ?? ""}
             </p>
             <p>
-              <strong>Columns:</strong> {info.columns}
+              <strong>Columns:</strong> {info?.columns ?? ""}
             </p>
             <p>
-              <strong>Column Names:</strong> {info.columns_list.join(", ")}
+              <strong>Column Names:</strong>{" "}
+              {info?.columns_list?.join(", ") || ""}
             </p>
           </div>
         )}
       </div>
 
+      {/* Footer */}
       <footer className="mt-24 text-center text-gray-400">
         <p>
           Made by <strong className="text-gray-200">Shivam Chatterjee</strong> |{" "}
@@ -165,7 +174,6 @@ const UploadCSV = () => {
             Portfolio
           </a>
         </p>
-
         <div className="flex justify-center gap-6 mt-3">
           <a
             href="https://github.com/ShivamxCj"
@@ -184,7 +192,7 @@ const UploadCSV = () => {
             <FaInstagram size={22} />
           </a>
           <a
-            href="https://www.linkedin.com/in/shivam-chatterjee-1230b4247?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"
+            href="https://www.linkedin.com/in/shivam-chatterjee-1230b4247"
             target="_blank"
             rel="noopener noreferrer"
             className="text-gray-400 hover:text-white transition"
