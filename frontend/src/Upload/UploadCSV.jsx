@@ -35,16 +35,21 @@ const UploadCSV = () => {
     const formData = new FormData();
     formData.append("file", file);
     try {
-      const res = await axios.post("https://csv-cleaner-cco8.onrender.com/clean", formData, {
-        responseType: "blob",
-      });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const res = await axios.post(
+        "https://csv-cleaner-cco8.onrender.com/clean",
+        formData,
+        { responseType: "blob" }
+      );
+
+      const blob = new Blob([res.data], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", `cleaned_${file.name}`);
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error(err);
       alert("Error downloading cleaned CSV");
@@ -61,13 +66,18 @@ const UploadCSV = () => {
         formData,
         { responseType: "blob" }
       );
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+
+      const blob = new Blob([res.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", `cleaned_${file.name.split(".")[0]}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error(err);
       alert("Error downloading Excel file");
@@ -86,6 +96,7 @@ const UploadCSV = () => {
         and
         <span className="font-semibold text-blue-400"> .xlsx </span> format.
       </p>
+
       {/* Card */}
       <div className="w-full max-w-md bg-gray-800 p-8 py-10 rounded-xl shadow-lg border border-gray-700">
         <input
@@ -93,7 +104,7 @@ const UploadCSV = () => {
           type="file"
           accept=".csv"
           onChange={handleFileChange}
-          className="hidden" // hide the ugly default input
+          className="hidden"
         />
 
         <label
@@ -103,7 +114,7 @@ const UploadCSV = () => {
           {file ? `📂 ${file.name}` : "Choose CSV File"}
         </label>
 
-        {/* Download buttons in 2-column grid */}
+        {/* Download buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-10">
           <button
             onClick={handleDownloadCSV}
@@ -168,7 +179,6 @@ const UploadCSV = () => {
           </a>
         </p>
 
-        {/* Social Icons */}
         <div className="flex justify-center gap-6 mt-3">
           <a
             href="https://github.com/ShivamxCj"
