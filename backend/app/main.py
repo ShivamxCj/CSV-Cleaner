@@ -4,16 +4,16 @@ import pandas as pd
 from io import BytesIO
 from fastapi.responses import StreamingResponse
 
-app = FastAPI(title="CSV Cleaner API", version="0.0.1")
+app = FastAPI(title="CSV Cleaner API", version="0.0.2")
 
 # ---- CORS Setup ----
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # frontend URL
+    allow_origins=["*"],  # Allow all origins (React frontend)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["Content-Disposition"]  # important for filename in downloads
+    expose_headers=["Content-Disposition"]  # needed for filename in downloads
 )
 
 @app.get("/")
@@ -24,13 +24,37 @@ def root():
 def health():
     return {"status": "ok"}
 
+# ---- Helper function to read and clean CSV ----
+async def _read_and_clean(file: UploadFile):
+    try:
+        contents = await file.read()  # read full file as bytes
+        df = pd.read_csv(BytesIO(contents))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Could not read CSV: {e}")
+
+    # Trim column names
+    df.columns = df.columns.str.strip()
+
+    # Trim whitespace in string columns
+    for col in df.select_dtypes(include=['object']).columns:
+        df[col] = df[col].astype(str).str.strip()
+
+    # Remove duplicates
+    df = df.drop_duplicates()
+
+    # Fill missing values
+    df = df.fillna("")
+
+    return df
+
 @app.post("/upload_csv")
 async def upload_csv(file: UploadFile = File(...)):
     """
-    Step 1: Receive a CSV from frontend
+    Step 1: Receive a CSV from frontend and return basic info
     """
     try:
-        df = pd.read_csv(file.file)
+        contents = await file.read()
+        df = pd.read_csv(BytesIO(contents))
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Could not read CSV: {e}")
 
@@ -80,25 +104,3 @@ async def download_xlsx(file: UploadFile = File(...)):
             "Access-Control-Expose-Headers": "Content-Disposition"
         }
     )
-
-# ---- Helper function to read and clean CSV ----
-async def _read_and_clean(file: UploadFile):
-    try:
-        df = pd.read_csv(file.file)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Could not read CSV: {e}")
-
-    # Trim column names
-    df.columns = df.columns.str.strip()
-
-    # Trim whitespace in string columns
-    for col in df.select_dtypes(include=['object']).columns:
-        df[col] = df[col].astype(str).str.strip()
-
-    # Remove duplicates
-    df = df.drop_duplicates()
-
-    # Fill missing values
-    df = df.fillna("")
-
-    return df
