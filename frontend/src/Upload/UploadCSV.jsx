@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import axios from "axios";
 import { FaGithub, FaInstagram, FaLinkedin } from "react-icons/fa";
 
+console.log("Uploading file:", file);
+
 const UploadCSV = () => {
   const [file, setFile] = useState(null);
   const [info, setInfo] = useState(null);
